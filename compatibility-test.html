@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuantumMatch™ AI Compatibility Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020c14;
+    --panel: #041824;
+    --border: #0ff5;
+    --accent: #00ffe7;
+    --accent2: #ff2d7a;
+    --accent3: #ffe700;
+    --text: #c8fff4;
+    --dim: #4a8a80;
+    --glow: 0 0 20px #00ffe766, 0 0 40px #00ffe733;
+    --glow2: 0 0 20px #ff2d7a66;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* Scanlines */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.15) 2px,
+      rgba(0,0,0,0.15) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Noise grain */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0.4;
+  }
+
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 30px 20px 60px;
+    position: relative;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: fadeIn 1s ease;
+  }
+
+  .logo-bar {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 6px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    opacity: 0.7;
+  }
+
+  h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(22px, 5vw, 38px);
+    font-weight: 900;
+    color: #fff;
+    text-shadow: var(--glow);
+    line-height: 1.2;
+    letter-spacing: 2px;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .tagline {
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 3px;
+    margin-top: 12px;
+    text-transform: uppercase;
+  }
+
+  .badge-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    background: #00ffe710;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    text-transform: uppercase;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* Panel */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 30px;
+    position: relative;
+    margin-bottom: 20px;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 20px;
+    width: 60px; height: 2px;
+    background: var(--accent);
+    box-shadow: var(--glow);
+  }
+
+  .panel-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    opacity: 0.8;
+  }
+
+  /* Progress */
+  .progress-bar-outer {
+    background: #0a2030;
+    height: 4px;
+    margin-bottom: 30px;
+    position: relative;
+    border: 1px solid #0ff2;
+  }
+
+  .progress-bar-inner {
+    height: 100%;
+    background: var(--accent);
+    box-shadow: var(--glow);
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .progress-label {
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Question */
+  .question-num {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+  }
+
+  .question-text {
+    font-size: clamp(16px, 3vw, 20px);
+    color: #fff;
+    line-height: 1.5;
+    margin-bottom: 28px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* Options */
+  .options {
+    display: grid;
+    gap: 10px;
+  }
+
+  .option {
+    background: #020c14;
+    border: 1px solid #0ff3;
+    padding: 14px 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    color: var(--text);
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .option::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .option:hover {
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: var(--glow);
+    transform: translateX(4px);
+  }
+
+  .option:hover::after { opacity: 0.05; }
+
+  .option.selected {
+    border-color: var(--accent);
+    background: #00ffe710;
+    color: var(--accent);
+  }
+
+  .option-key {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Next button */
+  .btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    letter-spacing: 3px;
+    padding: 14px 32px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    margin-top: 24px;
+    display: block;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    transform: translateX(-101%);
+    transition: transform 0.3s ease;
+  }
+
+  .btn:hover::before { transform: translateX(0); }
+  .btn:hover { color: #000; box-shadow: var(--glow); }
+  .btn span { position: relative; z-index: 1; }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn:disabled::before { display: none; }
+
+  /* Terminal / Analysis screen */
+  .terminal {
+    background: #000;
+    border: 1px solid var(--accent);
+    padding: 24px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    line-height: 2;
+    color: var(--accent);
+    box-shadow: var(--glow);
+    min-height: 200px;
+    display: none;
+  }
+
+  .terminal .line {
+    opacity: 0;
+    animation: termLine 0.01s ease forwards;
+  }
+
+  .cursor-blink {
+    display: inline-block;
+    width: 9px;
+    height: 16px;
+    background: var(--accent);
+    animation: blink 0.7s step-end infinite;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+
+  /* Result screen */
+  .result-screen {
+    display: none;
+    text-align: center;
+    animation: fadeIn 1s ease;
+  }
+
+  .result-score {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(60px, 15vw, 100px);
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: var(--glow);
+    line-height: 1;
+    margin: 20px 0 0;
+    animation: countUp 2s ease forwards;
+  }
+
+  .result-label {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 30px;
+  }
+
+  .result-verdict {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(14px, 3vw, 20px);
+    color: #fff;
+    margin: 20px 0 10px;
+    font-weight: 700;
+  }
+
+  .result-subtext {
+    color: var(--dim);
+    font-size: 13px;
+    line-height: 1.8;
+    max-width: 500px;
+    margin: 0 auto 30px;
+  }
+
+  .the-question {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(18px, 4vw, 28px);
+    font-weight: 900;
+    color: var(--accent3);
+    text-shadow: 0 0 20px var(--accent3), 0 0 40px var(--accent3)55;
+    margin: 30px 0 24px;
+    line-height: 1.4;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .answer-btns {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  .btn-yes {
+    background: var(--accent);
+    border: none;
+    color: #000;
+    font-family: 'Orbitron', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    padding: 18px 50px;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: var(--glow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    animation: yesGlow 1.5s ease-in-out infinite;
+  }
+
+  .btn-yes:hover {
+    transform: scale(1.07);
+    box-shadow: 0 0 40px var(--accent), 0 0 80px var(--accent)55;
+  }
+
+  .btn-no {
+    background: transparent;
+    border: 1px solid #ff2d7a44;
+    color: #ff2d7a44;
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 8px 16px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    align-self: center;
+  }
+
+  .btn-no:hover {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
+  /* Confetti */
+  .confetti-piece {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    opacity: 0;
+    animation: confettiFall linear forwards;
+    pointer-events: none;
+    z-index: 10000;
+  }
+
+  /* Final "yes" screen */
+  .final-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 0;
+    animation: fadeIn 1s ease;
+  }
+
+  .final-emoji {
+    font-size: 80px;
+    margin-bottom: 20px;
+    animation: bounce 0.6s ease infinite alternate;
+    display: block;
+  }
+
+  .final-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(20px, 5vw, 36px);
+    font-weight: 900;
+    color: #fff;
+    text-shadow: var(--glow);
+    margin-bottom: 16px;
+  }
+
+  .final-sub {
+    color: var(--dim);
+    font-size: 14px;
+    line-height: 2;
+  }
+
+  /* Stat bars */
+  .stat-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 11px;
+    color: var(--dim);
+  }
+
+  .stat-name {
+    width: 130px;
+    flex-shrink: 0;
+    letter-spacing: 1px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .stat-bar {
+    flex: 1;
+    height: 6px;
+    background: #0a2030;
+    border: 1px solid #0ff2;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0;
+    transition: width 1.5s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: var(--glow);
+  }
+
+  .stat-val {
+    width: 40px;
+    text-align: right;
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* Divider */
+  .divider {
+    border: none;
+    border-top: 1px solid #0ff2;
+    margin: 24px 0;
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @keyframes termLine {
+    to { opacity: 1; }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  @keyframes yesGlow {
+    0%, 100% { box-shadow: var(--glow); }
+    50% { box-shadow: 0 0 40px var(--accent), 0 0 80px var(--accent)55; }
+  }
+
+  @keyframes confettiFall {
+    0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+  }
+
+  @keyframes bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-12px); }
+  }
+
+  @keyframes countUp {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-bar">QuantumMatch™ Labs · Est. 2024 · Version 4.1.7</div>
+    <h1>AI Relationship <span>Compatibility</span> Analyzer</h1>
+    <p class="tagline">Powered by NeuroSync™ · 847 Billion Parameters · FDA-Adjacent</p>
+    <div class="badge-row">
+      <span class="badge">🔬 Peer Reviewed*</span>
+      <span class="badge">🧠 Neural Network</span>
+      <span class="badge">📊 99.4% Accurate</span>
+      <span class="badge">🏆 Award Winning†</span>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="quizScreen">
+    <div class="panel">
+      <div class="panel-label">// Biometric Assessment In Progress</div>
+      <div class="progress-label">
+        <span id="progressText">Question 1 of 10</span>
+        <span id="progressPct">10%</span>
+      </div>
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="progressBar" style="width:10%"></div>
+      </div>
+      <div class="question-num" id="questionNum">[ QUERY_001 ]</div>
+      <div class="question-text" id="questionText"></div>
+      <div class="options" id="optionsContainer"></div>
+      <button class="btn" id="nextBtn" disabled onclick="nextQuestion()"><span>→ SUBMIT RESPONSE</span></button>
+    </div>
+    <p style="font-size:10px; color:#1a4040; text-align:center; letter-spacing:1px;">
+      *Peer reviewed by at least two guys. †Self-nominated. Data encrypted with military-grade vibes.
+    </p>
+  </div>
+
+  <!-- ANALYSIS SCREEN -->
+  <div class="panel" id="analysisScreen" style="display:none;">
+    <div class="panel-label">// Running Compatibility Matrix</div>
+    <div class="terminal" id="terminal"></div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="resultScreen" class="result-screen">
+    <div class="panel">
+      <div class="panel-label">// Analysis Complete · Confidence: MAXIMUM</div>
+
+      <div class="result-score" id="resultScore">0%</div>
+      <div class="result-label">Compatibility Index™</div>
+
+      <div id="statBars" style="margin-bottom:20px;"></div>
+
+      <hr class="divider">
+
+      <div class="result-verdict">⚡ ALGORITHM VERDICT: STATISTICALLY INEVITABLE ⚡</div>
+      <div class="result-subtext">
+        After cross-referencing 847 billion relationship data points, analyzing your quantum personality signature, and consulting the ancient archives of romance, our AI has reached an inescapable conclusion.
+      </div>
+
+      <div class="the-question">Will you be my girlfriend? 💖</div>
+
+      <div class="answer-btns">
+        <button class="btn-yes" onclick="sayYes()">YES ✓</button>
+        <button class="btn-no" onclick="sayNo()">no (not recommended)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINAL SCREEN -->
+  <div id="finalScreen" class="final-screen">
+    <div class="panel">
+      <span class="final-emoji">🎉</span>
+      <div class="final-title">The Algorithm Rejoices!</div>
+      <div class="final-sub">
+        QuantumMatch™ AI predicted this outcome with 99.7% certainty.<br>
+        The remaining 0.3% was just us being humble.<br><br>
+        <span style="color: var(--accent); font-size:18px;">💖 This is going to be great. 💖</span><br><br>
+        <span style="font-size:11px; color: #1a4040;">Please disregard any future disclaimers. The AI has spoken.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  {
+    text: "A mysterious fog rolls into town. You have 60 seconds to grab one thing from your house. What do you take?",
+    options: ["My phone, obviously", "A vintage lamp — vibes matter", "My houseplant (she deserves to live)", "The fog IS me. I am the mystery."]
+  },
+  {
+    text: "You discover a cloud that looks EXACTLY like something. What does it look like?",
+    options: ["A dog wearing a tiny hat", "Continental Europe, slightly rotated", "My ex's emotional damage", "Nothing. Clouds are formless. Like time."]
+  },
+  {
+    text: "Scientists have confirmed: dinosaurs had a favorite color. What was it?",
+    options: ["Forest green, obviously", "A color that no longer exists", "Burnt sienna (they had taste)", "They were colorblind and at peace with it"]
+  },
+  {
+    text: "You're offered a magic ability. You can ONLY use it on Tuesdays. What power do you pick?",
+    options: ["Read minds (Tuesdays are for secrets)", "Speak to fish (they know things)", "Teleportation (beat the commute)", "Summon a reasonable amount of cheese"]
+  },
+  {
+    text: "A wizard offers you the world's most perfect sandwich. There's a catch. What is the catch?",
+    options: ["Every bite plays a different kazoo note", "It judges you while you eat it", "It's in a dimension slightly adjacent to here", "You can never describe it to anyone"]
+  },
+  {
+    text: "What is the vibe of a Tuesday afternoon?",
+    options: ["Lukewarm tea energy, but cozy", "Quietly ambitious with pencil smudges", "Beige, in a good way", "A sigh that becomes a yawn that becomes okay"]
+  },
+  {
+    text: "The moon calls you. She needs a favor. What does she ask for?",
+    options: ["To pull the tides a little less — she's tired", "A good playlist for the night shift", "Someone to finally explain tidal locking to her", "She just wanted to check in. She worries."]
+  },
+  {
+    text: "You find a book. It has your name on it. The last chapter is blank. What does that tell you?",
+    options: ["The best part hasn't happened yet", "Someone forgot to write it down", "I am the author. I choose the ending.", "It's a budget book. The ending was DLC."]
+  },
+  {
+    text: "Pick the most trustworthy animal for financial advice:",
+    options: ["Otter (diversified portfolio, obviously)", "Crow (has seen things, holds grudges with banks)", "Golden retriever (optimistic, never sells)", "The ancient tortoise who has simply waited"]
+  },
+  {
+    text: "Final question. A shooting star crosses the sky. You make a wish. What do you wish for?",
+    options: ["Something wonderful I can't quite name", "For the people I love to be happy", "A really good answer to this quiz", "I wish I knew what the star wished for"]
+  }
+];
+
+let current = 0;
+let selected = null;
+
+function renderQuestion() {
+  const q = questions[current];
+  document.getElementById('questionNum').textContent = `[ QUERY_${String(current+1).padStart(3,'0')} ]`;
+  document.getElementById('questionText').textContent = q.text;
+  document.getElementById('progressText').textContent = `Question ${current+1} of ${questions.length}`;
+  const pct = Math.round(((current+1)/questions.length)*100);
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressBar').style.width = pct + '%';
+
+  const keys = ['A','B','C','D'];
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = `<span class="option-key">${keys[i]}</span>${opt}`;
+    btn.onclick = () => selectOption(btn);
+    container.appendChild(btn);
+  });
+
+  selected = null;
+  document.getElementById('nextBtn').disabled = true;
+}
+
+function selectOption(el) {
+  document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selected = el;
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function nextQuestion() {
+  if (!selected) return;
+  current++;
+  if (current < questions.length) {
+    renderQuestion();
+  } else {
+    startAnalysis();
+  }
+}
+
+const termLines = [
+  "INITIALIZING QUANTUMMATCH™ ENGINE v4.1.7...",
+  "Loading 847 billion relationship parameters... ████████ DONE",
+  "Parsing response vector [QUERY_001 through QUERY_010]...",
+  "Mapping personality signature to NeuroSync™ lattice...",
+  "Cross-referencing with global romantic outcomes database...",
+  "Checking alignment with ancient Greek concept of 'the other half'...",
+  "Running Monte Carlo simulations (n = 1,000,000)...",
+  "Consulting historical records of great love stories...",
+  "Applying proprietary Butterflies™ coefficient... 🦋",
+  "Detecting: EXCEPTIONAL VIBE SIGNATURE",
+  "Detecting: UNUSUALLY HIGH WHIMSY INDEX",
+  "Detecting: OFFCHARTS WARMTH QUOTIENT",
+  "Detecting: SUSPICIOUS LEVELS OF WONDERFULNESS",
+  "WARNING: Result confidence exceeding normal parameters",
+  "Finalizing compatibility score...",
+  "RESULT LOCKED. PREPARING OUTPUT.",
+];
+
+function startAnalysis() {
+  document.getElementById('quizScreen').style.display = 'none';
+  const as = document.getElementById('analysisScreen');
+  as.style.display = 'block';
+  const terminal = document.getElementById('terminal');
+  terminal.style.display = 'block';
+  terminal.innerHTML = '';
+
+  let i = 0;
+  function addLine() {
+    if (i >= termLines.length) {
+      setTimeout(showResult, 1000);
+      return;
+    }
+    const div = document.createElement('div');
+    div.className = 'line';
+    div.style.animationDelay = '0s';
+    div.textContent = '> ' + termLines[i];
+    if (i === termLines.length - 1) {
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor-blink';
+      div.appendChild(cursor);
+    }
+    terminal.appendChild(div);
+    div.style.opacity = 1;
+    terminal.scrollTop = terminal.scrollHeight;
+    i++;
+    setTimeout(addLine, 200 + Math.random() * 150);
+  }
+  addLine();
+}
+
+const stats = [
+  { name: 'Vibe Resonance', val: 98 },
+  { name: 'Chaos Alignment', val: 94 },
+  { name: 'Whimsy Quotient', val: 99 },
+  { name: 'Cosmic Timing', val: 97 },
+  { name: 'Warmth Index', val: 100 },
+];
+
+function showResult() {
+  document.getElementById('analysisScreen').style.display = 'none';
+  const rs = document.getElementById('resultScreen');
+  rs.style.display = 'block';
+
+  // Animate score count up
+  const scoreEl = document.getElementById('resultScore');
+  let n = 0;
+  const target = 99.7;
+  const interval = setInterval(() => {
+    n = Math.min(n + 2.5, target);
+    scoreEl.textContent = n.toFixed(1) + '%';
+    if (n >= target) clearInterval(interval);
+  }, 30);
+
+  // Stat bars
+  const container = document.getElementById('statBars');
+  container.innerHTML = '';
+  stats.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'stat-row';
+    row.innerHTML = `<span class="stat-name">${s.name}</span><div class="stat-bar"><div class="stat-fill" id="sf${i}"></div></div><span class="stat-val">${s.val}%</span>`;
+    container.appendChild(row);
+    setTimeout(() => {
+      document.getElementById('sf'+i).style.width = s.val + '%';
+    }, 400 + i * 200);
+  });
+}
+
+function launchConfetti() {
+  const colors = ['#00ffe7', '#ff2d7a', '#ffe700', '#ffffff', '#a78bfa'];
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.top = '-20px';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.width = (6 + Math.random() * 10) + 'px';
+    el.style.height = (6 + Math.random() * 10) + 'px';
+    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+    el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    el.style.animationDelay = (Math.random() * 0.8) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
+
+function sayYes() {
+  launchConfetti();
+  document.getElementById('resultScreen').style.display = 'none';
+  document.getElementById('finalScreen').style.display = 'block';
+  setTimeout(launchConfetti, 800);
+  setTimeout(launchConfetti, 1600);
+}
+
+function sayNo() {
+  const btn = event.target;
+  const messages = [
+    "The algorithm disagrees.",
+    "Error: Logic not found.",
+    "Please try again. (Hint: click Yes)",
+    "Our AI is having a moment.",
+    "This option is deprecated.",
+    "Nice try. 🙂",
+    "The algorithm is crying.",
+    "Have you considered: Yes?",
+  ];
+  let idx = parseInt(btn.dataset.idx || '0');
+  btn.textContent = messages[idx % messages.length];
+  btn.dataset.idx = idx + 1;
+}
+
+// Init
+renderQuestion();
+</script>
+</body>
+</html>
